@@ -1,1 +1,1 @@
-# example-kustomize
+# General notes on GCP Tech

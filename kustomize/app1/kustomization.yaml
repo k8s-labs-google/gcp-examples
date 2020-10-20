@@ -1,0 +1,8 @@
+resources:
+- ../base
+namePrefix: app1-
+# if you want it at the end
+# nameSuffix:
+
+patchesStrategicMerge:
+- service.yaml

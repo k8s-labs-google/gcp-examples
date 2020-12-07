@@ -1,0 +1,78 @@
+// Copyright 2020 Google LLC
+//
+// This software is provided as-is, without warranty or representation for any
+// use or purpose. Your use of it is subject to your agreement with Google.
+
+pipeline {
+  agent {
+    kubernetes {
+      yamlFile 'build/jenkins/tf.yaml'
+      defaultContainer 'jnlp-slave'
+    }
+  }
+  parameters {
+    choice(name: 'terragrunt_command', choices: ['plan-all', 'plan', 'apply-all', 'apply', 'destroy'], description: 'terragrunt action to take.')
+    string(name: 'terragrunt_directory', defaultValue: 'nonprod', description: 'directory relative to terragrunt/ to run terragrunt commands within.')
+    choice(name: 'gcp_organization', choices: ['westernunion.com', 'wu.com'], description: 'Which org to deploy against.')
+    booleanParam(name: 'refresh', defaultValue: false, description: 'Refresh job config to update UI from Pipeline')
+  }
+  environment {
+    WORKDIR = "${env.WORKSPACE}/terragrunt/${params.terragrunt_directory}"
+    GCP_ORG = "${params.gcp_organization}"
+    TF_IN_AUTOMATION = "1"
+  }
+  stages {
+    stage('Refresh UI') {
+      steps {
+        script {
+          if (params.refresh) {
+            // Simply abort the job early if we want to refresh the UI elements of job config after initial import or changes
+            currentBuild.result = 'ABORT'
+            error('Refreshing job configuration from Pipeline DSL.')
+            exit 0
+          }
+        }
+      }
+    }
+    stage('terragrunt action'){
+      steps {
+        script {
+          dir (WORKDIR) {
+            try {
+              if(params.terragrunt_command == "plan" || params.terragrunt_command == "plan-all"){
+                  terragrunt_flags = "-lock=false"
+              }
+              if(params.terragrunt_command == "apply" || params.terragrunt_command == "apply-all"){
+                  terragrunt_flags = "-auto-approve"
+              }
+              global_flags = "-no-color --terragrunt-non-interactive -input=false"
+              terragrunt_command_w_flags = "terragrunt ${params.terragrunt_command} ${global_flags} ${terragrunt_flags}"
+              println "INFO: Running `${terragrunt_command_w_flags}` in ${WORKDIR}"
+              withCredentials(
+                [
+                  file(
+                    credentialsId: 'turnkey-girder-272113',
+                    variable: 'GOOGLE_APPLICATION_CREDENTIALS'
+                  ),
+                  // [
+                  //   $class: 'AmazonWebServicesCredentialsBinding',
+                  //   credentialsId: 'aws-credentials',
+                  //   accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                  //   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                  // ]
+                ]
+              )
+              {
+                sh "${terragrunt_command_w_flags}"
+              }
+            } catch (Exception e) {
+              println "ERROR: `${terragrunt_command_w_flags}` in ${WORKDIR} failed:"
+              println e
+              currentBuild.result = 'FAILURE'
+            }
+          }
+        }
+      }
+    }
+  }
+}

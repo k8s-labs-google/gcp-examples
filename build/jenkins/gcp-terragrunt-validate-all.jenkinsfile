@@ -1,0 +1,42 @@
+// Copyright 2020 Google LLC
+//
+// This software is provided as-is, without warranty or representation for any
+// use or purpose. Your use of it is subject to your agreement with Google.
+
+pipeline {
+  agent {
+    kubernetes {
+      yamlFile 'build/jenkins/tf.yaml'
+      defaultContainer 'jnlp-slave'
+    }
+  }
+  stages {
+    stage('terragrunt validate-all'){
+      steps {
+        script {
+            withCredentials(
+            [
+              // not necessary for validation
+              // file(
+              //   credentialsId: '2fffb1fc-49ac-4084-85de-30bb083f4b8b',
+              //   variable: 'GOOGLE_APPLICATION_CREDENTIALS'
+              // ),
+              [
+                $class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: 'aws-credentials',
+                accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+              ]
+            ]
+          )
+          {
+            sh '''#!/bin/bash
+            cd terragrunt
+            terragrunt validate-all -no-color
+            '''
+          }
+        }
+      }
+    }
+  }
+}

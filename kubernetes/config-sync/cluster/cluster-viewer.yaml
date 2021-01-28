@@ -1,0 +1,19 @@
+# Copyright 2020 Google LLC
+#
+# This software is provided as-is, without warranty or representation for any
+# use or purpose. Your use of it is subject to your agreement with Google.
+
+# NOTE: uncomment this AND the namespaces/default/rolebinding to enable RBAC
+#       just adding those two allows anyone in this group to do anything in default, and _only_ default
+#       add a folder for a new namespace, a namespace.yaml and a rolebinding.yaml to "enable" a new namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-viewer
+rules:
+- apiGroups:
+    - '*'
+  resources:
+  - '*'
+  verbs:
+  - get

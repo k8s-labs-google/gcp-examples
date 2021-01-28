@@ -1,0 +1,41 @@
+
+# Copyright 2020 Google LLC
+#
+# This software is provided as-is, without warranty or representation for any
+# use or purpose. Your use of it is subject to your agreement with Google.
+
+# Test run this build by running the following from the repo root
+# $ gcloud builds submit . --config=cloudbuild.yaml
+
+substitutions:
+  _TERRAFORM_VERSION: 0.12.24
+  _TERRAFORM_VERSION_SHA256SUM: 602d2529aafdaa0f605c06adb7c72cfb585d8aa19b3f4d8d189b42589e27bf11
+  _TERRAGRUNT_VERSION: 0.23.10
+  _TERRAGRUNT_VERSION_SHA256SUM: 21f0a7fa8f292ed6c9d448c6c293bdddf8d27f1bc0e9586afe2eb2496d3b5139
+  _REGISTRY_PROJECT_ID: wu-core-registry-prod-2969
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    env:
+      - "TERRAFORM_VERSION=${_TERRAFORM_VERSION}"
+      - "TERRAFORM_VERSION_SHA256SUM=${_TERRAFORM_VERSION_SHA256SUM}"
+      - "TERRAGRUNT_VERSION=${_TERRAGRUNT_VERSION}"
+      - "TERRAGRUNT_VERSION_SHA256SUM=${_TERRAGRUNT_VERSION_SHA256SUM}"
+    args:
+      - "build"
+      - --build-arg
+      - TERRAFORM_VERSION=${_TERRAFORM_VERSION}
+      - --build-arg
+      - TERRAFORM_VERSION_SHA256SUM=${_TERRAFORM_VERSION_SHA256SUM}
+      - --build-arg
+      - TERRAGRUNT_VERSION=${_TERRAGRUNT_VERSION}
+      - --build-arg
+      - TERRAGRUNT_VERSION_SHA256SUM=${_TERRAGRUNT_VERSION_SHA256SUM}
+      - --tag
+      - "gcr.io/${_REGISTRY_PROJECT_ID}/terragrunt:${_TERRAFORM_VERSION}-${_TERRAGRUNT_VERSION}"
+      - --tag
+      - "gcr.io/${_REGISTRY_PROJECT_ID}/terragrunt:latest"
+      - "."
+images:
+  - "gcr.io/${_REGISTRY_PROJECT_ID}/terragrunt:${_TERRAFORM_VERSION}-${_TERRAGRUNT_VERSION}"
+  - "gcr.io/${_REGISTRY_PROJECT_ID}/terragrunt:latest"
+tags: ["cloud-builders-community"]

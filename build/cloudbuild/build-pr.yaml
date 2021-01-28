@@ -1,0 +1,31 @@
+# Copyright 2020 Google LLC
+#
+# This software is provided as-is, without warranty or representation for any
+# use or purpose. Your use of it is subject to your agreement with Google.
+
+# Test run this build by running the following from the repo root
+# $ gcloud builds submit --config=build/cloudbuild/<this_file>.yaml
+
+steps:
+  - name: "gcr.io/${_REGISTRY_PROJECT_ID}/terragrunt:${_IMAGE_TAG}"
+    env:
+      - TF_IN_AUTOMATION=1
+      - TF_INPUT=false
+      - GCP_ORG=k8slabs.io
+      - TG_ACTION=${_TG_ACTION}
+      - TG_DEBUG=${_TG_DEBUG}
+    secretEnv: ["GOOGLE_CREDENTIALS"]
+    dir: ${_DIR}
+    timeout: 3000s
+tags: ["cloud-builders-community"]
+substitutions:
+  _DIR: ""
+  _IMAGE_TAG: ""
+  _REGISTRY_PROJECT_ID: REGISTRY_PROJECT_ID
+  _TG_ACTION: ""
+  _TG_DEBUG: "false"
+secrets:
+  - kmsKeyName: projects/<PROJECT_ID>/locations/global/keyRings/terragrunt-cloudbuild/cryptoKeys/org-sa
+    secretEnv:
+      GOOGLE_CREDENTIALS: XYZ
+timeout: 3600s
